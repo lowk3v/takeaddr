@@ -4,12 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"github.com/fatih/color"
-	"github.com/lowk3v/micro-tool-template/internal"
-	"github.com/lowk3v/micro-tool-template/internal/enum"
-	"github.com/lowk3v/micro-tool-template/utils"
+	"github.com/lowk3v/takeaddr/internal"
+	"github.com/lowk3v/takeaddr/internal/enum"
+	"github.com/lowk3v/takeaddr/utils"
 	"os"
 )
-import global "github.com/lowk3v/micro-tool-template/config"
+import global "github.com/lowk3v/takeaddr/config"
 
 func __existArg(arg string) bool {
 	args := os.Args[1:]
@@ -30,19 +30,20 @@ func (a *ArgList) Set(value string) error {
 func _banner() {
 	// https://patorjk.com/software/taag/#p=display&f=ANSI%20Shadow&t=%20dumpsc
 	_, _ = fmt.Fprintf(os.Stderr, "%s %s by %s\n%s\nCredits: https://github.com/%s/%s\nTwitter: https://twitter.com/%s\n\n",
-		color.HiBlueString(`
-     █████╗ ██████╗ ██████╗ 
-    ██╔══██╗██╔══██╗██╔══██╗
-    ███████║██████╔╝██████╔╝
-    ██╔══██║██╔═══╝ ██╔═══╝ 
-    ██║  ██║██║     ██║     
-    ╚═╝  ╚═╝╚═╝     ╚═╝ `),
+		color.HiBlueString(`    
+	████████╗ █████╗ ██╗  ██╗███████╗ █████╗ ██████╗ ██████╗ ██████╗ 
+    ╚══██╔══╝██╔══██╗██║ ██╔╝██╔════╝██╔══██╗██╔══██╗██╔══██╗██╔══██╗
+       ██║   ███████║█████╔╝ █████╗  ███████║██║  ██║██║  ██║██████╔╝
+       ██║   ██╔══██║██╔═██╗ ██╔══╝  ██╔══██║██║  ██║██║  ██║██╔══██╗
+       ██║   ██║  ██║██║  ██╗███████╗██║  ██║██████╔╝██████╔╝██║  ██║
+       ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝ ╚═════╝ ╚═╝  ╚═╝
+                                                                     `),
 		color.BlueString("v"+global.Version),
-		color.BlueString("@author_name"),
-		"project_description",
-		"author_name",
-		"project_name",
-		"#",
+		color.BlueString("@LowK"),
+		"Get all smart contract address from urls",
+		"LowK",
+		"takeaddr",
+		"LowK3v_",
 	)
 	_, _ = fmt.Fprintf(os.Stderr, "Usage of: %s <options> <args>\n", os.Args[0])
 	flag.PrintDefaults()
@@ -53,37 +54,85 @@ func _parseFlags() (*internal.Options, error) {
 	var verbose bool
 	var version bool
 	var output string
-
-	// global arguments
-	flag.StringVar(&configPath, "c", "", "optional. Path to config file")
-	flag.BoolVar(&verbose, "v", false, "verbose mode")
-	flag.StringVar(&output, "o", "./output", "output directory")
-	flag.BoolVar(&version, "version", false, "print version and exit")
-	flag.Usage = _banner
-	flag.Parse()
+	var resolve bool
+	var complete bool
+	var noColors bool
+	var insecure bool
 
 	// global configurations
 	options := &internal.Options{
-		Action:  enum.NONE,
-		Verbose: verbose,
-		Version: version,
-		Output:  output,
+		Action:     enum.NONE,
+		Verbose:    verbose,
+		Version:    version,
+		Output:     output,
+		Url:        "",
+		Method:     "GET",
+		OutputFile: "",
+		InputFile:  "",
+		Resolve:    false,
+		Complete:   false,
+		NoColors:   false,
+		Headers:    []string{},
+		Insecure:   true,
+		Timeout:    10,
 	}
+
+	// global arguments
+	flag.StringVar(&configPath, "c", "", "optional. Path to config file")
+	flag.BoolVar(&version, "version", false, "print version and exit")
+	// module configurations, implement if needed
+	flag.StringVar(&options.Url, "u", "", "url to crawl")
+	flag.StringVar(&options.Method, "m", "GET", "http method")
+	flag.StringVar(&options.OutputFile, "o", "", "output file")
+	flag.StringVar(&options.InputFile, "i", "", "input file")
+	flag.BoolVar(&resolve, "resolve", true, "Resolve the output and filter out the non existing files (Can only be used in combination with --complete)")
+	flag.BoolVar(&complete, "complete", true, "Complete the urls. e.g. /js/index.js -> https://example.com/js/index.js")
+	flag.BoolVar(&noColors, "no-colors", false, "no colors")
+	flag.BoolVar(&insecure, "insecure", true, "insecure")
+	flag.IntVar(&options.Timeout, "timeout", 10, "timeout")
+	flag.Var((*ArgList)(&options.Headers), "header", "http header")
+	flag.BoolVar(&verbose, "v", false, "verbose mode")
+	flag.Parse()
+
 	if version {
 		options.Action = enum.SHOWVERSION
 		return options, nil
 	}
 
-	// module configurations, implement if needed
+	if verbose {
+		options.Verbose = true
+	}
+
+	if noColors {
+		options.NoColors = true
+	}
+
+	if resolve {
+		options.Resolve = true
+	}
+
+	if complete {
+		options.Complete = true
+	}
+
+	if insecure {
+		options.Insecure = true
+	}
+
+	if options.Url != "" {
+		options.Action = enum.URL
+	} else {
+		options.Action = enum.NONE
+	}
 
 	// Custom config file
 	if len(configPath) > 0 {
 		if err := utils.FileExists(configPath, false); err != nil {
-			global.Log.WithField("configPath", configPath).Errorf("config file not found")
+			_, _ = fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 			return options, err
 		}
 		if err := global.CustomConfig(configPath); err != nil {
-			global.Log.WithField("configPath", configPath).Errorf(err.Error())
+			_, _ = fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 			return options, err
 		}
 	}
@@ -102,6 +151,10 @@ func main() {
 	if err != nil {
 		os.Exit(0)
 	}
-	app := internal.New(options)
-	app.Run()
+	addresses, err := internal.Run(*options)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+		return
+	}
+	internal.Explorer(addresses)
 }

@@ -2,13 +2,13 @@
 
 Click to `Use this template` and create a new repository.
 
-# project_name
+# takeaddr
 ![https://opensource.org/licenses/MIT](https://img.shields.io/badge/license-MIT-_red.svg)
-![https://goreportcard.com/badge/github.com/author_name/project_name](https://goreportcard.com/badge/github.com/author_name/project_name)
-![https://github.com/author_name/project_name/releases](https://img.shields.io/github/release/author_name/project_name)
-![https://twitter.com/author_name](https://img.shields.io/twitter/follow/author_name.svg?logo=twitter)
+![https://goreportcard.com/badge/github.com/lowk3v/takeaddr](https://goreportcard.com/badge/github.com/lowk3v/takeaddr)
+![https://github.com/lowk3v/takeaddr/releases](https://img.shields.io/github/release/lowk3v/takeaddr)
+![https://twitter.com/lowk3v_](https://img.shields.io/twitter/follow/lowk3v_.svg?logo=twitter)
 
-project_description
+Get all smart contract address from urls
 
 # Features
 
@@ -35,7 +35,7 @@ Branch `minimal` is minimal integration:
 # Installation
 
 ```sh
-go install github.com/author_name/project_name@latest
+go install github.com/lowk3v/takeaddr@latest
 ```
 
 # Todo

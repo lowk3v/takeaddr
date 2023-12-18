@@ -2,7 +2,7 @@ package config
 
 import (
 	_ "embed"
-	"github.com/lowk3v/micro-tool-template/pkg/log"
+	"fmt"
 	"gopkg.in/yaml.v3"
 	"os"
 )
@@ -12,19 +12,15 @@ var Config Yaml
 //go:embed config.yml
 var configYml string
 
-var Log log.Logger
-
 type Yaml struct {
 	// Your config load from config.yml here
 }
 
 func init() {
-	Log = *log.New("info")
-
 	// Load Config yml
 	err := yaml.Unmarshal([]byte(configYml), &Config)
 	if err != nil {
-		Log.Errorf("Error loading config: %s", err)
+		_, _ = fmt.Fprintf(os.Stderr, "Error loading config: %s", err)
 		os.Exit(1)
 	}
 }

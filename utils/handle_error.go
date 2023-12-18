@@ -1,12 +1,13 @@
 package utils
 
-import "github.com/lowk3v/micro-tool-template/config"
+import (
+	"fmt"
+	"os"
+)
 
 func HandleError(err error, customMsg string) bool {
 	if err != nil {
-		config.Log.
-			WithField("msg", customMsg).
-			Error(err)
+		_, _ = fmt.Fprintf(os.Stderr, "%s: %s\n", customMsg, err)
 		return true
 	}
 	return false

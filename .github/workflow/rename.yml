@@ -6,7 +6,7 @@ permissions: write-all
 
 jobs:
   rename-project:
-    if: ${{ !contains (github.repository, '/micro-tool-template') }}
+    if: ${{ !contains (github.repository, '/takeaddr') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
