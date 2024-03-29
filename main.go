@@ -75,6 +75,7 @@ func _parseFlags() (*internal.Options, error) {
 		Headers:    []string{},
 		Insecure:   true,
 		Timeout:    10,
+		NoExplorer: false,
 	}
 
 	// global arguments
@@ -90,6 +91,7 @@ func _parseFlags() (*internal.Options, error) {
 	flag.BoolVar(&noColors, "no-colors", false, "no colors")
 	flag.BoolVar(&insecure, "insecure", true, "insecure")
 	flag.IntVar(&options.Timeout, "timeout", 10, "timeout")
+	flag.BoolVar(&options.NoExplorer, "no-explorer", false, "no discover explorer by chain")
 	flag.Var((*ArgList)(&options.Headers), "header", "http header")
 	flag.BoolVar(&verbose, "v", false, "verbose mode")
 	flag.Parse()
@@ -146,6 +148,15 @@ func _parseFlags() (*internal.Options, error) {
 	return options, nil
 }
 
+func printAddress(addresses []string) {
+	for _, address := range addresses {
+		if utils.IsBlacklist(address) {
+			continue
+		}
+		_, _ = fmt.Fprintf(os.Stdout, "%s\n", address)
+	}
+}
+
 func main() {
 	options, err := _parseFlags()
 	if err != nil {
@@ -156,5 +167,9 @@ func main() {
 		_, _ = fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 		return
 	}
-	internal.Explorer(addresses)
+	if options.NoExplorer {
+		printAddress(addresses)
+	} else {
+		internal.Explorer(addresses)
+	}
 }

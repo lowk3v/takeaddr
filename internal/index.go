@@ -38,6 +38,7 @@ type Options struct {
 	Headers    []string
 	Insecure   bool
 	Timeout    int
+	NoExplorer bool
 }
 
 func Run(opt Options) ([]string, error) {
