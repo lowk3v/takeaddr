@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-resty/resty/v2"
+	"github.com/gocolly/colly/v2"
 	"github.com/lowk3v/takeaddr/utils"
 	"strings"
 )
@@ -68,7 +69,27 @@ func beauty(data []DefiYieldScanData) string {
 			continue
 		}
 		explorer := utils.ChainIdToExplorer(info.NetworkId)
-		networkLinkMsg = append(networkLinkMsg, fmt.Sprintf("\n\t\t[%s](%s/address/%s)", chainName, explorer, info.Address))
+		fullyExplorer := fmt.Sprintf("%s/address/%s", explorer, info.Address)
+		name, _ := tokenInfo(fullyExplorer)
+		networkLinkMsg = append(networkLinkMsg, fmt.Sprintf("\n\t\t[%s](%s) %s", chainName, fullyExplorer, name))
 	}
 	return strings.Join(networkLinkMsg, ", ")
+}
+
+func tokenInfo(explorerUrl string) (string, error) {
+	if explorerUrl == "" {
+		return "", errors.New("explorer url is empty")
+	}
+	name := ""
+	c := colly.NewCollector(
+		colly.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"),
+	)
+	c.OnHTML("#ContentPlaceHolder1_tr_tokeninfo a", func(e *colly.HTMLElement) {
+		name = e.Text
+	})
+	err := c.Visit(explorerUrl)
+	if err != nil {
+		return name, err
+	}
+	return name, nil
 }
